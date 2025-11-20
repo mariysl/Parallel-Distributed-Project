@@ -1,200 +1,144 @@
-# **Distributed Prime Checker – Final Exam Project**
+# Distributed Prime Checker
 
-## 📌 **Project Overview**
+Final Exam Project – Parallel & Distributed Systems
 
-This project implements a distributed system that checks whether numbers are prime using a **Controller–Worker architecture**.
-The controller distributes tasks to multiple worker machines, and each worker processes numbers and returns results.
-A student client script can retrieve the final distributed results from the controller.
+## Project Overview
 
-This project demonstrates:
+This project implements a distributed system that checks whether numbers are prime. The system uses a controller–worker architecture. The controller assigns tasks to connected workers, and each worker processes the numbers it receives and sends the results back. A separate client script allows students or classmates to request and view the final results from the controller.
 
-* Distributed computing
-* Task scheduling
-* Worker scalability (add new workers at any time)
-* Logging of worker hostname + IP
-* Class-wide access through a Python client
+The project demonstrates distributed task execution, worker scalability, and basic inter-machine communication using TCP sockets.
 
----
+## Files in This Repository
 
-# 📂 **Files Included**
-
-| File            | Description                                                                                    |
-| --------------- | ---------------------------------------------------------------------------------------------- |
-| `controller.py` | Runs the controller node (master). Assigns tasks, receives results, logs worker activity.      |
-| `worker.py`     | Runs on worker machines. Receives tasks, computes primality, returns output to the controller. |
-| `client.py`     | Script for classmates to request results from the controller.                                  |
-| `README.md`     | Documentation (this file).                                                                     |
+* **controller.py** – Runs the controller (master node), assigns tasks, receives results, and logs which worker processed each number.
+* **worker.py** – Runs on worker machines, connects to the controller, computes prime checks, and returns results.
+* **client.py** – A simple script for classmates to connect to the controller and view all processed results.
+* **README.md** – Documentation on how to set up and run the system.
 
 ---
 
-# ⚙️ **How the System Works**
+## How the System Works
 
-## **1. Controller**
+### Controller
 
-* Listens for incoming workers and clients
-* Distributes tasks one by one
-* Logs:
+* Listens on a network interface for worker and client connections.
+* Distributes tasks one at a time from an internal queue.
+* Receives results and records the worker hostname and IP address.
+* Sends the full list of results to clients when they connect.
 
-  ```
-  [RESULT] 23 -> Prime? True (Processed by worker-B, 192.168.1.103)
-  ```
-* Stores final results
-* Sends results to `client.py` when requested
+### Workers
 
-## **2. Workers**
+* Connect to the controller using its LAN IP address.
+* Identify themselves to the controller using hostname.
+* Receive a task (a number), compute whether it is prime, and send the result back.
+* Print logs showing the task and the worker’s hostname and IP.
+* Stop automatically once all tasks are completed.
 
-* Connect to the controller automatically
-* Receive one task at a time
-* Compute `is_prime(number)`
-* Log:
+### Client
 
-  ```
-  [WORKER LOG] worker-C (192.168.1.104) processed 29 -> Prime? True
-  ```
-* Send results back to the controller
-* Stop when the controller sends `"STOP"`
-
-## **3. Client**
-
-* Lets students fetch results from the controller
-* Shows which worker processed each number
-* Works without accessing the controller console
+* Connects to the controller and retrieves the final results.
+* Displays the numbers, their primality status, and which worker processed them.
+* Allows classmates to interact with the application without accessing the controller directly.
 
 ---
 
-# 🚀 **Setup Instructions**
+## Setup Instructions
 
-## **1. Start the Controller (Machine A)**
+### 1. Starting the Controller (Machine A)
 
-1. Open `controller.py`
-2. Confirm:
+1. Open `controller.py`.
+2. Make sure the host is set to:
 
-   ```python
+   ```
    HOST = "0.0.0.0"
    PORT = 5000
    ```
 3. Run:
 
-   ```bash
+   ```
    python3 controller.py
    ```
 
-You should see:
-
-```
-[CONTROLLER] Listening on 0.0.0.0:5000
-```
+You should see it listening for workers and clients.
 
 ---
 
-## **2. Start a Worker (Machine B, C, D...)**
+### 2. Starting a Worker (Machine B, C, etc.)
 
-1. Open `worker.py`
-2. Set the controller’s LAN IP:
+1. Open `worker.py`.
+2. Update the controller’s IP address:
 
-   ```python
+   ```
    CONTROLLER_HOST = "192.168.1.X"
    ```
 3. Run:
 
-   ```bash
+   ```
    python3 worker.py
    ```
 
-The worker logs something like:
-
-```
-[WORKER STARTED] worker-B (192.168.1.103)
-```
+The worker will automatically connect to the controller and wait for tasks.
 
 ---
 
-# 🔥 **3. Add New Workers (Scalability Requirement)**
+### 3. Adding Additional Workers (Scalability)
 
-To add workers:
+To add more workers, repeat the same steps as above:
 
-1. Copy `worker.py` to the new machine
-2. Change **ONE line**:
+* Copy `worker.py` to a new machine
+* Change only the controller IP
+* Run `python3 worker.py`
 
-   ```python
+No changes on the controller are required.
+
+The controller will immediately begin sending tasks to the new worker if tasks remain.
+
+---
+
+### 4. Running the Client Script (Class-Wide Access)
+
+1. Open `client.py`.
+2. Update the controller IP:
+
+   ```
    CONTROLLER_HOST = "192.168.1.X"
    ```
 3. Run:
 
-   ```bash
-   python3 worker.py
    ```
-
-✔ No changes to controller
-✔ Worker joins instantly
-✔ Satisfies “minimal configuration change” requirement
-
----
-
-## **4. Run the Client (Class-Wide Access)**
-
-Students can run `client.py` anytime.
-
-1. Set controller IP:
-
-   ```python
-   CONTROLLER_HOST = "192.168.1.X"
-   ```
-2. Run:
-
-   ```bash
    python3 client.py
    ```
 
-Example output:
-
-```
-2  -> Prime? True (Processed by worker-1, 192.168.1.101)
-23 -> Prime? True (Processed by worker-2, 192.168.1.102)
-```
+The client prints all results, including which worker processed each number.
 
 ---
 
-# 📊 **Logs & Distributed Execution Evidence**
+## Logging and Output
 
-### Controller logs which worker processed each task:
-
-```
-[RESULT] 29 -> Prime? True (Processed by worker-C, 192.168.1.150)
-```
-
-### Workers identify themselves and show processing:
+Workers will produce logs such as:
 
 ```
-[WORKER LOG] worker-A (192.168.1.102) processed 17 -> Prime? True
+[WORKER LOG] worker-C (192.168.1.104) processed 29 -> Prime? True
 ```
 
-These logs satisfy the assignment requirement for **visible distributed task execution**.
+The controller will show:
+
+```
+[RESULT] 29 -> Prime? True (Processed by worker-C, 192.168.1.104)
+```
+
+This provides clear evidence of distributed execution as required by the project instructions.
 
 ---
 
-# 🎓 **Class-Wide Access Requirement**
+## Summary
 
-This project uses the **Python client option** (approved method).
-To satisfy the assignment requirements:
+This project includes:
 
-### ✔ Post `client.py` on the Canvas Project Discussion Board
+* A controller that manages tasks and results
+* Workers that join dynamically and compute prime checks
+* A client script for class-wide result access
+* Logging that identifies each worker and the work it performed
+* Simple setup that only requires updating the controller IP on worker and client machines
 
-Explain:
-
-* Students must update `CONTROLLER_HOST` to your IP
-* Then run `python3 client.py`
-
-This satisfies the “application must be accessible to all students” rule.
-
----
-
-# 📄 **Summary**
-
-This distributed system:
-
-* Uses a controller-worker architecture
-* Allows dynamic worker scaling
-* Logs distributed computation
-* Provides class-wide access via a client script
-* Meets all project submission requirements
+This satisfies the project’s requirements for distributed execution, worker scalability, and accessibility.
